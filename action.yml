@@ -1,0 +1,33 @@
+name: 'ghasmttr'
+description: 'GitHub Advanced Security Mean Time to Remediate (MTTR)'
+
+inputs:
+  token:
+    description: GitHub Personal Access Token
+    default: ${{ github.token }}
+  
+  exporter:
+    description: Exporter
+    default: 'issue_summary'
+
+  argvs:
+    description: 'Additional Arguments'
+
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        echo "::group::Installing Dependencies"
+        pushd ${{ github.action_path }}
+        python3 -m pip install pipenv && python3 -m pipenv install --system
+        popd
+        echo "::endgroup::"
+    - shell: bash
+      run: |
+        PYTHONPATH=${{ github.action_path }} && export PYTHONPATH=${{ github.action_path }}
+        python3 -m ghasmttr \
+          --token "${{ inputs.token }}" \
+          --exporter "${{ inputs.exporter }}" \
+          ${{ inputs.argvs }}
