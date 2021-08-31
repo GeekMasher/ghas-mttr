@@ -16,9 +16,12 @@ parser.add_argument("--owner", default=os.environ.get("GITHUB_REPOSITORY_OWNER")
 parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
 parser.add_argument("-t", "--token", default=os.environ.get("GITHUB_TOKEN"))
 
-parser.add_argument("--exporter", default="issues", help="Exporter name")
+parser.add_argument("--exporter", default="issue_summary", help="Exporter name")
 parser.add_argument("--exporter-list", action="store_true", help="Exporter list")
 
+parser.add_argument(
+    "--output", default=os.path.join(__HERE__, ".mttr"), help="Output folder"
+)
 parser.add_argument(
     "--template-path",
     default=os.path.join(__HERE__, "templates"),
@@ -39,14 +42,18 @@ if __name__ == "__main__":
 
         exit(0)
 
+    owner, repo = arguments.repository.split("/")
+
     github = GitHub(
-        arguments.owner,
-        name=arguments.repository,
+        owner=owner,
+        name=repo,
         instance=arguments.instance,
         token=arguments.token,
     )
 
     print(f"GitHub Repository :: {github.repository}")
+
+    print(f"Exporter :: {arguments.exporter}")
 
     # repositories = [{"name": "AutoBuilder"}]
 
@@ -61,7 +68,7 @@ if __name__ == "__main__":
         repository_name = repo.get("name")
         print(f"Processing :: {repository_name}")
 
-        repository = Repository(arguments.owner, repository_name)
+        repository = Repository(owner, repository_name)
 
         results = github.getSecurityIssues(repository_name)
 

@@ -1,3 +1,5 @@
+import os
+import json
 import requests
 from string import Template
 
@@ -9,6 +11,7 @@ class GitHub:
         name: str = None,
         instance: str = "https://github.com",
         token: str = None,
+        cache_path: str = ".mttr",
     ):
         self.headers = {
             "Accept": "application/vnd.github.v3+json",
@@ -26,20 +29,44 @@ class GitHub:
         self.owner = owner
         self.name = name
 
+        self.cache_path = cache_path
+        os.makedirs(self.cache_path, exist_ok=True)
+
     @property
     def repository(self):
         return f"{self.owner}/{self.name}"
+
+    def cache(self, name: str, file_type: str = "json"):
+        path = os.path.join(self.cache_path, name + "." + file_type)
+        if os.path.exists(path) and file_type == "json":
+            print(f"Reading from cache file: {path}")
+
+            with open(path, "r") as handle:
+                return json.load(handle)
+
+    def cacheSave(self, name: str, data, file_type: str = "json"):
+        path = os.path.join(self.cache_path, name + "." + file_type)
+        if file_type == "json":
+            with open(path, "w") as handle:
+                json.dump(data, handle, indent=2)
 
     def getRepositories(self):
         url = f"{self.instance_api}/orgs/{self.owner}/repos"
         return self.getRequest(url)
 
     def getSecurityIssues(self, repository: str, ref: str = None):
+        cache_key = f"{self.owner}_{repository}"
+        cache = self.cache(cache_key)
+        if cache:
+            return cache
+
         url = (
             f"{self.instance_api}/repos/{self.owner}/{repository}/code-scanning/alerts"
         )
         print(f"Getting Security Results for :: {self.owner}/{repository}")
-        return self.getRequest(url)
+        data = self.getRequest(url)
+        self.cacheSave(cache_key, data)
+        return data
 
     def createSummaryIssue(
         self, repository: str, title: str, body: str, assignees: list[str] = []
