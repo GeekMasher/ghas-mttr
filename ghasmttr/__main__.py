@@ -39,15 +39,23 @@ if __name__ == "__main__":
 
         exit(0)
 
-    print(f"GitHub Owner :: {arguments.owner}")
-    github = GitHub(arguments.owner, instance=arguments.instance, token=arguments.token)
+    github = GitHub(
+        arguments.owner,
+        name=arguments.repository,
+        instance=arguments.instance,
+        token=arguments.token,
+    )
+
+    print(f"GitHub Repository :: {github.repository}")
 
     # repositories = [{"name": "AutoBuilder"}]
 
     repositories = github.getRepositories()
-    print(f"Repositories:: {len(repositories)}")
+    print(f"Total Repositories :: {len(repositories)}")
 
     repositories_results = []
+
+    print("::group::Processing Repositories")
 
     for repo in repositories:
         repository_name = repo.get("name")
@@ -76,6 +84,8 @@ if __name__ == "__main__":
             print("Skipping as not security issues...")
 
         repositories_results.append(repository)
+
+    print("::endgroup::")
 
     for exporter, exporter_func in __EXPORTERS__.items():
         if exporter == arguments.exporter or arguments.exporter == "all":
